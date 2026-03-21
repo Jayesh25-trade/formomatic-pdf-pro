@@ -83,11 +83,12 @@ function renderChallanPage(doc: jsPDF, c: ChallanForm, pageW: number) {
   y += 8;
 
   // PC No and Date - right aligned
-  doc.setFont('times', 'normal');
-  doc.setFontSize(10);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(14);
   doc.setTextColor(200, 0, 0);
   doc.text(c.pcNo || '___', pageW - margin, y, { align: 'right' });
   y += 5;
+  doc.setFontSize(10);
   const dateStr = c.date ? format(new Date(c.date), 'dd/MM/yyyy') : '___/___/______';
   doc.text(dateStr, pageW - margin, y, { align: 'right' });
 
@@ -157,8 +158,10 @@ function renderChallanPage(doc: jsPDF, c: ChallanForm, pageW: number) {
   // Coal line
   doc.text('OF INDIA COAL / IMPORT COAL with Qty.', margin, y);
   doc.setFont('times', 'bold');
+  doc.setFontSize(13);
   doc.text(c.quantity || '________', margin + 73, y);
   doc.setFont('times', 'normal');
+  doc.setFontSize(10);
   doc.text('M.T.', pageW - margin - 8, y);
   doc.setLineWidth(0.2);
   doc.line(margin + 73, y + 1, pageW - margin - 10, y + 1);
