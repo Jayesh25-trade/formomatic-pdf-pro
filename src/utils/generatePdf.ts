@@ -3,6 +3,16 @@ import { ChallanForm } from '@/types/challan';
 import { format } from 'date-fns';
 
 export function generateChallanPdf(challans: ChallanForm[]) {
+  const doc = buildChallanDoc(challans);
+  doc.save('delivery-challans.pdf');
+}
+
+export function generateChallanBlob(challans: ChallanForm[]): Blob {
+  const doc = buildChallanDoc(challans);
+  return doc.output('blob');
+}
+
+function buildChallanDoc(challans: ChallanForm[]): jsPDF {
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageW = 210;
 
@@ -11,7 +21,7 @@ export function generateChallanPdf(challans: ChallanForm[]) {
     renderChallanPage(doc, challan, pageW);
   });
 
-  doc.save('delivery-challans.pdf');
+  return doc;
 }
 
 function renderChallanPage(doc: jsPDF, c: ChallanForm, pageW: number) {
@@ -58,7 +68,7 @@ function renderChallanPage(doc: jsPDF, c: ChallanForm, pageW: number) {
   // Phone & email
   doc.text('M : 9881125511 / 7020709696 , Email : ', pageW / 2 - 25, y);
   doc.setTextColor(0, 0, 180);
-  doc.text('parthfuelcorp@gmail.com', pageW / 2 + 27, y);
+  doc.text('parthfuelcorporation23@gmail.com', pageW / 2 + 27, y);
 
   y += 5;
 
