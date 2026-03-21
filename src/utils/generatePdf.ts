@@ -68,7 +68,7 @@ function renderChallanPage(doc: jsPDF, c: ChallanForm, pageW: number) {
   // Phone & email
   doc.text('M : 9881125511 / 7020709696 , Email : ', pageW / 2 - 25, y);
   doc.setTextColor(0, 0, 180);
-  doc.text('parthfuelcorp@gmail.com', pageW / 2 + 27, y);
+  doc.text('parthfuelcorporation23@gmail.com', pageW / 2 + 27, y);
 
   y += 5;
 

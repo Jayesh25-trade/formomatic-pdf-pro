@@ -5,6 +5,7 @@ import { Pencil, Trash2, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ChallanPreview } from './ChallanPreview';
 import { toast } from '@/hooks/use-toast';
+import { generateChallanBlob } from '@/utils/generatePdf';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,50 +19,54 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-function buildShareText(c: ChallanForm, i: number): string {
-  const dateStr = c.date ? format(new Date(c.date), 'dd/MM/yyyy') : '—';
-  return [
-    `📋 Delivery Challan #${i + 1}`,
-    `PC No: ${c.pcNo || '—'}`,
-    `Date: ${dateStr}`,
-    `Party: ${c.partyName || '—'}`,
-    `Truck No: ${c.truckNo || '—'}`,
-    `Qty: ${c.quantity || '—'} M.T.`,
-    c.freightRate ? `Freight Rate: ${c.freightRate}` : '',
-    c.totalFreightAmount ? `Total Freight: ${c.totalFreightAmount}` : '',
-    c.advance ? `Advance: ${c.advance}` : '',
-    c.balanceToPay ? `Balance to Pay: ${c.balanceToPay}` : '',
-    '',
-    '— Parth Fuel Corporation',
-  ].filter(Boolean).join('\n');
-}
-
 function ShareButton({ challan, index }: { challan: ChallanForm; index: number }) {
-  const text = buildShareText(challan, index);
+  const fileName = `Challan-${index + 1}.pdf`;
+
+  const getPdfFile = (): File => {
+    const blob = generateChallanBlob([challan]);
+    return new File([blob], fileName, { type: 'application/pdf' });
+  };
 
   const handleNativeShare = async () => {
-    if (navigator.share) {
+    const file = getPdfFile();
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ title: `Delivery Challan #${index + 1}`, text });
+        await navigator.share({ title: fileName, files: [file] });
       } catch { /* user cancelled */ }
+    } else {
+      // fallback: download
+      downloadPdf();
     }
   };
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    toast({ title: 'Copied to clipboard' });
+  const downloadPdf = () => {
+    const blob = generateChallanBlob([challan]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'PDF downloaded' });
   };
 
   const handleWhatsApp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    // WhatsApp Web doesn't support file sharing via URL, so download first
+    downloadPdf();
+    toast({ title: 'PDF downloaded — attach it in WhatsApp manually' });
   };
 
   const handleEmail = () => {
-    window.open(`mailto:?subject=${encodeURIComponent(`Delivery Challan #${index + 1}`)}&body=${encodeURIComponent(text)}`, '_blank');
+    // Download PDF and open email compose
+    downloadPdf();
+    window.open(
+      `mailto:?subject=${encodeURIComponent(fileName)}&body=${encodeURIComponent('Please find the attached Delivery Challan.')}`,
+      '_blank'
+    );
   };
 
-  // If native share is available, use it directly
-  if (navigator.share) {
+  // If native share with file support is available, use it directly
+  if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
     return (
       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNativeShare}>
         <Share2 className="h-3.5 w-3.5" />
@@ -77,8 +82,8 @@ function ShareButton({ challan, index }: { challan: ChallanForm; index: number }
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleCopy}>Copy to Clipboard</DropdownMenuItem>
-        <DropdownMenuItem onClick={handleWhatsApp}>WhatsApp</DropdownMenuItem>
+        <DropdownMenuItem onClick={downloadPdf}>Download PDF</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleWhatsApp}>WhatsApp (download first)</DropdownMenuItem>
         <DropdownMenuItem onClick={handleEmail}>Email</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
