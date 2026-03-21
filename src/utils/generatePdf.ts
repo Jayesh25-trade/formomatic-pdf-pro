@@ -83,11 +83,12 @@ function renderChallanPage(doc: jsPDF, c: ChallanForm, pageW: number) {
   y += 8;
 
   // PC No and Date - right aligned
-  doc.setFont('times', 'normal');
-  doc.setFontSize(10);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(14);
   doc.setTextColor(200, 0, 0);
   doc.text(c.pcNo || '___', pageW - margin, y, { align: 'right' });
   y += 5;
+  doc.setFontSize(10);
   const dateStr = c.date ? format(new Date(c.date), 'dd/MM/yyyy') : '___/___/______';
   doc.text(dateStr, pageW - margin, y, { align: 'right' });
 
