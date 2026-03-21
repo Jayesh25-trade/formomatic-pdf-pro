@@ -61,9 +61,12 @@ const Index = () => {
         </Card>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">
-            Saved Forms ({challans.length})
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-sm font-semibold">
+              Saved Forms ({challans.length})
+            </h2>
+            <ExpiryTimer formCount={challans.length} />
+          </div>
           <div className="flex gap-2">
             {challans.length > 0 && (
               <>
