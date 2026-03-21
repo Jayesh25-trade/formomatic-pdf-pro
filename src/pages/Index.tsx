@@ -7,6 +7,7 @@ import { generateChallanPdf } from '@/utils/generatePdf';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileDown, Trash2 } from 'lucide-react';
+import { ExpiryTimer } from '@/components/ExpiryTimer';
 import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
