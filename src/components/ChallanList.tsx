@@ -105,11 +105,11 @@ export function ChallanList({ challans, onEdit, onDelete }: Props) {
         <Card key={c.id} className="group">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="min-w-0 flex-1">
-              <div className="font-medium text-sm">
-                #{i + 1} — {c.pcNo || 'No PC No.'} · {c.date ? format(new Date(c.date), 'dd/MM/yyyy') : 'No date'}
+              <div className="font-bold text-sm tracking-wide">
+                #{i + 1} — <span className="text-foreground">{c.pcNo || 'No PC No.'}</span> · {c.date ? format(new Date(c.date), 'dd/MM/yyyy') : 'No date'}
               </div>
-              <div className="text-xs text-muted-foreground truncate">
-                {c.partyName || 'No party'} · Truck: {c.truckNo || '—'} · Qty: {c.quantity || '—'} M.T.
+              <div className="text-xs font-semibold text-muted-foreground truncate">
+                {c.partyName || 'No party'} · <span className="font-bold text-foreground">Truck: {c.truckNo || '—'}</span> · <span className="font-bold text-foreground">Qty: {c.quantity || '—'} M.T.</span>
               </div>
             </div>
             <div className="flex gap-0.5 ml-3">
