@@ -1,8 +1,11 @@
+export type MaterialType = 'coal' | 'briquettes';
+
 export interface ChallanForm {
   id: string;
   pcNo: string;
   date: string;
   partyName: string;
+  materialType: MaterialType;
   truckNo: string;
   quantity: string;
   freightRate: string;
@@ -20,6 +23,7 @@ export const emptyChallan = (): ChallanForm => ({
   pcNo: '',
   date: '',
   partyName: '',
+  materialType: 'coal',
   truckNo: '',
   quantity: '',
   freightRate: '',

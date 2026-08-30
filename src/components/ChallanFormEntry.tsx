@@ -7,6 +7,7 @@ import { CalendarIcon, Plus, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -20,7 +21,7 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit }: Pro
   const [dateOpen, setDateOpen] = useState(false);
 
   const handleChange = (field: keyof ChallanForm, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => ({ ...prev, [field]: value } as ChallanForm));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -63,6 +64,24 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit }: Pro
       <div className="space-y-1.5">
         <Label htmlFor="partyName">Party Name (M/s)</Label>
         <Input id="partyName" value={form.partyName} onChange={e => handleChange('partyName', e.target.value)} placeholder="Kairav Chemofarabe Industries ltd" />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Material Type</Label>
+        <RadioGroup
+          value={form.materialType ?? 'coal'}
+          onValueChange={(v) => handleChange('materialType', v)}
+          className="flex gap-6"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="coal" id="mat-coal" />
+            <Label htmlFor="mat-coal" className="font-normal cursor-pointer">India / Import Coal</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="briquettes" id="mat-briq" />
+            <Label htmlFor="mat-briq" className="font-normal cursor-pointer">Briquettes</Label>
+          </div>
+        </RadioGroup>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
