@@ -21,7 +21,7 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit }: Pro
   const [dateOpen, setDateOpen] = useState(false);
 
   const handleChange = (field: keyof ChallanForm, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => ({ ...prev, [field]: value } as ChallanForm));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
