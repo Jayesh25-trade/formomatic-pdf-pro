@@ -47,6 +47,7 @@ export function ChallanPreview({ challan, index }: Props) {
             <Field label="PC No." value={challan.pcNo} />
             <Field label="Date" value={dateStr} />
             <Field label="Party Name (M/s)" value={challan.partyName} />
+            <Field label="Material" value={challan.materialType === 'briquettes' ? 'Briquettes' : 'India / Import Coal'} />
             <Field label="Truck No." value={challan.truckNo} />
             <Field label="Quantity (M.T.)" value={challan.quantity} />
             <Field label="Freight Rate" value={challan.freightRate} />

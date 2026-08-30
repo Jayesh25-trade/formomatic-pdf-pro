@@ -156,15 +156,19 @@ function renderChallanPage(doc: jsPDF, c: ChallanForm, pageW: number) {
   y += 7;
 
   // Coal line
-  doc.text('OF INDIA COAL / IMPORT COAL with Qty.', margin, y);
+  const materialLabel = c.materialType === 'briquettes'
+    ? 'OF BRIQUETTES with Qty.'
+    : 'OF INDIA COAL / IMPORT COAL with Qty.';
+  doc.text(materialLabel, margin, y);
+  const qtyX = margin + doc.getTextWidth(materialLabel) + 4;
   doc.setFont('times', 'bold');
   doc.setFontSize(13);
-  doc.text(c.quantity || '________', margin + 73, y);
+  doc.text(c.quantity || '________', qtyX, y);
   doc.setFont('times', 'normal');
   doc.setFontSize(10);
   doc.text('M.T.', pageW - margin - 8, y);
   doc.setLineWidth(0.2);
-  doc.line(margin + 73, y + 1, pageW - margin - 10, y + 1);
+  doc.line(qtyX, y + 1, pageW - margin - 10, y + 1);
 
   y += 7;
 
