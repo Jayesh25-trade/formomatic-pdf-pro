@@ -1,49 +1,93 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { ChallanForm } from '@/types/challan';
-
-const STORAGE_KEY = 'delivery-challans';
-const TIMESTAMP_KEY = 'delivery-challans-timestamp';
-const EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
+import { fromDb, toDb } from '@/types/challanDb';
+import { toast } from '@/hooks/use-toast';
 
 export function useChallanStorage() {
-  const [challans, setChallans] = useState<ChallanForm[]>(() => {
-    try {
-      const timestamp = localStorage.getItem(TIMESTAMP_KEY);
-      if (timestamp && Date.now() - Number(timestamp) > EXPIRY_MS) {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(TIMESTAMP_KEY);
-        return [];
-      }
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [challans, setChallans] = useState<ChallanForm[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [nextPcNo, setNextPcNo] = useState<number | null>(null);
+
+  const refreshSequence = useCallback(async () => {
+    const { data } = await supabase
+      .from('pc_sequence')
+      .select('last_pc_no')
+      .eq('id', 1)
+      .maybeSingle();
+    if (data) setNextPcNo(data.last_pc_no + 1);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(challans));
-    if (challans.length > 0) {
-      localStorage.setItem(TIMESTAMP_KEY, String(Date.now()));
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('challans')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (cancelled) return;
+      if (error) {
+        toast({ title: 'Could not load saved bills', description: error.message, variant: 'destructive' });
+      } else {
+        setChallans((data ?? []).map(fromDb));
+      }
+      setLoading(false);
+      refreshSequence();
+    })();
+    return () => { cancelled = true; };
+  }, [refreshSequence]);
+
+  const addChallan = async (challan: ChallanForm): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from('challans')
+      .insert(toDb(challan))
+      .select()
+      .single();
+    if (error || !data) {
+      toast({ title: 'Could not save form', description: error?.message, variant: 'destructive' });
+      return false;
     }
-  }, [challans]);
-
-  const addChallan = (challan: ChallanForm) => {
-    setChallans(prev => [...prev, challan]);
+    setChallans(prev => [...prev, fromDb(data)]);
+    refreshSequence();
+    return true;
   };
 
-  const updateChallan = (challan: ChallanForm) => {
-    setChallans(prev => prev.map(c => c.id === challan.id ? challan : c));
+  const updateChallan = async (challan: ChallanForm): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from('challans')
+      .update(toDb(challan))
+      .eq('id', challan.id)
+      .select()
+      .single();
+    if (error || !data) {
+      toast({ title: 'Could not update form', description: error?.message, variant: 'destructive' });
+      return false;
+    }
+    setChallans(prev => prev.map(c => (c.id === challan.id ? fromDb(data) : c)));
+    refreshSequence();
+    return true;
   };
 
-  const removeChallan = (id: string) => {
+  const removeChallan = async (id: string) => {
     setChallans(prev => prev.filter(c => c.id !== id));
+    const { error } = await supabase.from('challans').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Could not delete form', description: error.message, variant: 'destructive' });
+    }
   };
 
-  const clearAll = () => {
+  const clearAll = async () => {
+    const { error } = await supabase
+      .from('challans')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) {
+      toast({ title: 'Could not clear forms', description: error.message, variant: 'destructive' });
+      return;
+    }
     setChallans([]);
-    localStorage.removeItem(TIMESTAMP_KEY);
+    toast({ title: 'All saved forms cleared' });
   };
 
-  return { challans, addChallan, updateChallan, removeChallan, clearAll };
+  return { challans, loading, nextPcNo, addChallan, updateChallan, removeChallan, clearAll };
 }

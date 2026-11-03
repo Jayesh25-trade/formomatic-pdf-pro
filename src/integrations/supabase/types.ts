@@ -14,7 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      challans: {
+        Row: {
+          advance: string
+          balance_to_pay: string
+          created_at: string
+          date: string | null
+          freight_rate: string
+          id: string
+          lr_no: string
+          lr_of: string
+          material_type: string
+          party_name: string
+          pc_no: string
+          pc_number: number | null
+          purchase_order_dated: string
+          purchase_order_no: string
+          quantity: string
+          total_freight_amount: string
+          truck_no: string
+          updated_at: string
+        }
+        Insert: {
+          advance?: string
+          balance_to_pay?: string
+          created_at?: string
+          date?: string | null
+          freight_rate?: string
+          id?: string
+          lr_no?: string
+          lr_of?: string
+          material_type?: string
+          party_name?: string
+          pc_no?: string
+          pc_number?: number | null
+          purchase_order_dated?: string
+          purchase_order_no?: string
+          quantity?: string
+          total_freight_amount?: string
+          truck_no?: string
+          updated_at?: string
+        }
+        Update: {
+          advance?: string
+          balance_to_pay?: string
+          created_at?: string
+          date?: string | null
+          freight_rate?: string
+          id?: string
+          lr_no?: string
+          lr_of?: string
+          material_type?: string
+          party_name?: string
+          pc_no?: string
+          pc_number?: number | null
+          purchase_order_dated?: string
+          purchase_order_no?: string
+          quantity?: string
+          total_freight_amount?: string
+          truck_no?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pc_sequence: {
+        Row: {
+          id: number
+          last_pc_no: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          last_pc_no?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          last_pc_no?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793719552439,
+      "tag": "0000_create_challans_and_pc_sequence",
+      "breakpoints": true
+    }
+  ]
 }

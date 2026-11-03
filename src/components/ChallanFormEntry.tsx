@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChallanForm, emptyChallan } from '@/types/challan';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,16 +9,50 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { getDraftAgeMs } from '@/components/ExpiryTimer';
 
 interface Props {
   onSubmit: (challan: ChallanForm) => void;
   editingChallan?: ChallanForm | null;
   onCancelEdit?: () => void;
+  defaultPcNo?: string;
+  suggestions?: Partial<Record<keyof ChallanForm, string[]>>;
 }
 
-export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit }: Props) {
-  const [form, setForm] = useState<ChallanForm>(editingChallan || emptyChallan());
+const DRAFT_KEY = 'challan-draft';
+const DRAFT_MAX_AGE_MS = 15 * 60 * 1000;
+
+function loadDraft(): ChallanForm | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.form || !parsed?.ts) return null;
+    if (Date.now() - Number(parsed.ts) > DRAFT_MAX_AGE_MS) {
+      localStorage.removeItem(DRAFT_KEY);
+      return null;
+    }
+    return parsed.form as ChallanForm;
+  } catch {
+    return null;
+  }
+}
+
+export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit, defaultPcNo, suggestions }: Props) {
+  const [form, setForm] = useState<ChallanForm>(() => {
+    if (editingChallan) return editingChallan;
+    const draft = loadDraft();
+    if (draft) return draft;
+    return { ...emptyChallan(), pcNo: defaultPcNo ?? '' };
+  });
   const [dateOpen, setDateOpen] = useState(false);
+
+  // Persist the in-progress (unsaved) form; it auto-clears after 15 minutes
+  // of inactivity. Saved bills are stored permanently in the cloud database.
+  useEffect(() => {
+    if (editingChallan) return;
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, ts: Date.now() }));
+  }, [form, editingChallan]);
 
   const handleChange = (field: keyof ChallanForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value } as ChallanForm));
@@ -27,17 +61,36 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit }: Pro
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(form);
-    setForm(emptyChallan());
+    setForm({ ...emptyChallan(), pcNo: defaultPcNo ?? '' });
+    localStorage.removeItem(DRAFT_KEY);
   };
 
   const selectedDate = form.date ? new Date(form.date) : undefined;
 
+  const listProps = (field: keyof ChallanForm) =>
+    suggestions?.[field]?.length ? { list: 'challan-suggestions' } : {};
+
+  const renderSuggestions = () => {
+    if (!suggestions) return null;
+    const all = Array.from(
+      new Set(Object.values(suggestions).flat().filter(v => v && v.trim()))
+    );
+    if (all.length === 0) return null;
+    return (
+      <datalist id="challan-suggestions">
+        {all.map(v => <option key={v} value={v} />)}
+      </datalist>
+    );
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {renderSuggestions()}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="pcNo">PC No.</Label>
-          <Input id="pcNo" value={form.pcNo} onChange={e => handleChange('pcNo', e.target.value)} placeholder="PC/123" />
+          <Input id="pcNo" value={form.pcNo} onChange={e => handleChange('pcNo', e.target.value)} placeholder="PC/211" {...listProps('pcNo')} />
         </div>
         <div className="space-y-1.5">
           <Label>Date</Label>
@@ -63,7 +116,7 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit }: Pro
 
       <div className="space-y-1.5">
         <Label htmlFor="partyName">Party Name (M/s)</Label>
-        <Input id="partyName" value={form.partyName} onChange={e => handleChange('partyName', e.target.value)} placeholder="Kairav Chemofarabe Industries ltd" />
+        <Input id="partyName" value={form.partyName} onChange={e => handleChange('partyName', e.target.value)} placeholder="Kairav Chemofarabe Industries ltd" {...listProps('partyName')} />
       </div>
 
       <div className="space-y-2">
@@ -87,7 +140,7 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit }: Pro
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="truckNo">Truck No.</Label>
-          <Input id="truckNo" value={form.truckNo} onChange={e => handleChange('truckNo', e.target.value)} placeholder="MH06BW8400" />
+          <Input id="truckNo" value={form.truckNo} onChange={e => handleChange('truckNo', e.target.value)} placeholder="MH06BW8400" {...listProps('truckNo')} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="quantity">Quantity (M.T.)</Label>
@@ -97,28 +150,28 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit }: Pro
 
       <div className="space-y-1.5">
         <Label htmlFor="freightRate">Freight Rate</Label>
-        <Input id="freightRate" value={form.freightRate} onChange={e => handleChange('freightRate', e.target.value)} placeholder="Enter freight rate" />
+        <Input id="freightRate" value={form.freightRate} onChange={e => handleChange('freightRate', e.target.value)} placeholder="Enter freight rate" {...listProps('freightRate')} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="lrNo">L.R. No.</Label>
-          <Input id="lrNo" value={form.lrNo} onChange={e => handleChange('lrNo', e.target.value)} placeholder="LR number" />
+          <Input id="lrNo" value={form.lrNo} onChange={e => handleChange('lrNo', e.target.value)} placeholder="LR number" {...listProps('lrNo')} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="lrOf">Of</Label>
-          <Input id="lrOf" value={form.lrOf} onChange={e => handleChange('lrOf', e.target.value)} placeholder="Of" />
+          <Input id="lrOf" value={form.lrOf} onChange={e => handleChange('lrOf', e.target.value)} placeholder="Of" {...listProps('lrOf')} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="purchaseOrderNo">Purchase Order No.</Label>
-          <Input id="purchaseOrderNo" value={form.purchaseOrderNo} onChange={e => handleChange('purchaseOrderNo', e.target.value)} placeholder="PO number" />
+          <Input id="purchaseOrderNo" value={form.purchaseOrderNo} onChange={e => handleChange('purchaseOrderNo', e.target.value)} placeholder="PO number" {...listProps('purchaseOrderNo')} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="purchaseOrderDated">Dated</Label>
-          <Input id="purchaseOrderDated" value={form.purchaseOrderDated} onChange={e => handleChange('purchaseOrderDated', e.target.value)} placeholder="PO date" />
+          <Input id="purchaseOrderDated" value={form.purchaseOrderDated} onChange={e => handleChange('purchaseOrderDated', e.target.value)} placeholder="PO date" {...listProps('purchaseOrderDated')} />
         </div>
       </div>
 

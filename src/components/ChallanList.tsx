@@ -15,6 +15,7 @@ import {
 
 interface Props {
   challans: ChallanForm[];
+  loading?: boolean;
   onEdit: (challan: ChallanForm) => void;
   onDelete: (id: string) => void;
 }
@@ -90,11 +91,19 @@ function ShareButton({ challan, index }: { challan: ChallanForm; index: number }
   );
 }
 
-export function ChallanList({ challans, onEdit, onDelete }: Props) {
+export function ChallanList({ challans, loading, onEdit, onDelete }: Props) {
+  if (loading) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        Loading saved bills…
+      </div>
+    );
+  }
+
   if (challans.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        No forms added yet. Fill in the form above and click "Add Form".
+        No bills saved yet. Fill in the form above and click "Add Form".
       </div>
     );
   }
