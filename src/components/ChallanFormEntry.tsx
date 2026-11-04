@@ -42,7 +42,7 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit, defau
   const [form, setForm] = useState<ChallanForm>(() => {
     if (editingChallan) return editingChallan;
     const draft = loadDraft();
-    if (draft) return draft;
+    if (draft) return { ...draft, pcNo: draft.pcNo || defaultPcNo || '' };
     return { ...emptyChallan(), pcNo: defaultPcNo ?? '' };
   });
   const [dateOpen, setDateOpen] = useState(false);
