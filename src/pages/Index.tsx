@@ -1,19 +1,30 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ChallanFormEntry } from '@/components/ChallanFormEntry';
-import { ChallanList } from '@/components/ChallanList';
 import { useChallanStorage } from '@/hooks/useChallanStorage';
 import { ChallanForm } from '@/types/challan';
 import { generateChallanPdf } from '@/utils/generatePdf';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileDown, Trash2 } from 'lucide-react';
+import { FileDown } from 'lucide-react';
 import { ExpiryTimer } from '@/components/ExpiryTimer';
 import { toast } from '@/hooks/use-toast';
+import { generateChallanPdf } from '@/utils/generatePdf';
+import { getLatestChallan } from '@/utils/challanDownloads';
+import { AppNavigation } from '@/components/AppNavigation';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
-  const { challans, loading, nextPcNo, addChallan, updateChallan, removeChallan, clearAll } = useChallanStorage();
-  const [editing, setEditing] = useState<ChallanForm | null>(null);
+  const { challans, loading, nextPcNo, addChallan, updateChallan } = useChallanStorage();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const routeState = location.state as { editingChallan?: ChallanForm; fromHistory?: boolean } | null;
+  const [editing, setEditing] = useState<ChallanForm | null>(routeState?.editingChallan ?? null);
   const [saving, setSaving] = useState(false);
+  const latestChallan = getLatestChallan(challans);
+
+  useEffect(() => {
+    if (routeState?.editingChallan) setEditing(routeState.editingChallan);
+  }, [routeState?.editingChallan]);
 
   const defaultPcNo = nextPcNo ? `PC/${nextPcNo}` : undefined;
 
@@ -40,36 +51,29 @@ const Index = () => {
     if (editing) {
       setEditing(null);
       toast({ title: 'Form updated' });
+      if (routeState?.fromHistory) navigate('/history', { replace: true });
     } else {
       toast({ title: 'Form saved', description: `Total bills: ${challans.length + 1}` });
     }
   };
 
-  const handleExportPdf = () => {
-    if (challans.length === 0) {
-      toast({ title: 'No forms to export', variant: 'destructive' });
-      return;
-    }
-    generateChallanPdf(challans);
-    toast({ title: 'PDF downloaded', description: `${challans.length} page(s) exported.` });
-  };
-
   return (
-    <div className="min-h-screen bg-muted/40 py-8 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-muted/40 px-4 pb-10">
+      <AppNavigation />
+      <main className="max-w-2xl mx-auto space-y-6 py-8">
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-bold tracking-tight" style={{ lineHeight: '1.1' }}>
             Delivery Challan Generator
           </h1>
           <p className="text-sm text-muted-foreground">
-            Parth Fuel Corporation — Fill multiple forms, export as A4 PDF
+            Parth Fuel Corporation — Prepare and save one bill at a time
           </p>
         </div>
 
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap">
-              <span>{editing ? 'Edit Form' : 'New Challan Form'}</span>
+               <span>{editing ? 'Edit bill' : 'New bill'}</span>
               <ExpiryTimer />
             </CardTitle>
           </CardHeader>
@@ -85,33 +89,39 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h2 className="text-sm font-semibold">
-              Saved Bills ({challans.length})
-            </h2>
-          </div>
-          <div className="flex gap-2">
-            {challans.length > 0 && (
-              <>
-                <Button variant="outline" size="sm" onClick={clearAll} className="gap-1.5 text-destructive hover:text-destructive">
-                  <Trash2 className="h-3.5 w-3.5" /> Clear All
-                </Button>
-                <Button size="sm" onClick={handleExportPdf} className="gap-1.5">
-                  <FileDown className="h-3.5 w-3.5" /> Save as PDF
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+        {latestChallan && (
+          <section className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold">Latest saved bill</h2>
+              <p className="text-sm text-muted-foreground">{latestChallan.pcNo || 'No PC number'} · {latestChallan.partyName || 'No party name'}</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                generateChallanPdf([latestChallan]);
+                toast({ title: 'Latest bill PDF downloaded', description: 'This download contains one A4 page.' });
+              }}
+            >
+              <FileDown className="h-4 w-4" /> Download latest PDF
+            </Button>
+          </section>
+        )}
 
-        <ChallanList
-          challans={challans}
-          loading={loading}
-          onEdit={setEditing}
-          onDelete={removeChallan}
-        />
-      </div>
+        {loading && (
+          <p className="py-4 text-center text-sm text-muted-foreground">Loading saved bills…</p>
+        )}
+
+        {editing && routeState?.fromHistory && (
+          <button
+            type="button"
+            onClick={() => { setEditing(null); navigate('/history', { replace: true }); }}
+            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Cancel editing and return to History
+          </button>
+        )}
+      </main>
     </div>
   );
 };

@@ -193,7 +193,7 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit, defau
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" className="gap-2">
-          {editingChallan ? <><Save className="h-4 w-4" /> Update Form</> : <><Plus className="h-4 w-4" /> Add Form</>}
+          {editingChallan ? <><Save className="h-4 w-4" /> Update Bill</> : <><Plus className="h-4 w-4" /> Save Bill</>}
         </Button>
         {editingChallan && onCancelEdit && (
           <Button type="button" variant="outline" onClick={onCancelEdit}>Cancel</Button>

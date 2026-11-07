@@ -1,11 +1,13 @@
 import { ChallanForm } from '@/types/challan';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Pencil, Trash2, Share2 } from 'lucide-react';
+import { Pencil, Trash2, Share2, FileDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ChallanPreview } from './ChallanPreview';
 import { toast } from '@/hooks/use-toast';
 import { generateChallanBlob } from '@/utils/generatePdf';
+import { generateChallanPdf } from '@/utils/generatePdf';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +20,8 @@ interface Props {
   loading?: boolean;
   onEdit: (challan: ChallanForm) => void;
   onDelete: (id: string) => void;
+  selectedIds: string[];
+  onToggleSelected: (id: string) => void;
 }
 
 function ShareButton({ challan, index }: { challan: ChallanForm; index: number }) {
@@ -91,7 +95,7 @@ function ShareButton({ challan, index }: { challan: ChallanForm; index: number }
   );
 }
 
-export function ChallanList({ challans, loading, onEdit, onDelete }: Props) {
+export function ChallanList({ challans, loading, onEdit, onDelete, selectedIds, onToggleSelected }: Props) {
   if (loading) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -103,7 +107,7 @@ export function ChallanList({ challans, loading, onEdit, onDelete }: Props) {
   if (challans.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        No bills saved yet. Fill in the form above and click "Add Form".
+        No bills match this search.
       </div>
     );
   }
@@ -122,8 +126,27 @@ export function ChallanList({ challans, loading, onEdit, onDelete }: Props) {
               </div>
             </div>
             <div className="flex gap-0.5 ml-3">
+              <Checkbox
+                aria-label={`Select ${c.pcNo || `bill ${i + 1}`} for PDF export`}
+                checked={selectedIds.includes(c.id)}
+                onCheckedChange={() => onToggleSelected(c.id)}
+                className="mr-2 self-center"
+              />
               <ChallanPreview challan={c} index={i} />
               <ShareButton challan={c} index={i} />
+              <Button
+                variant="ghost"
+                size="icon"
+                title="Download this bill as PDF"
+                aria-label={`Download ${c.pcNo || `bill ${i + 1}`} as PDF`}
+                onClick={() => {
+                  generateChallanPdf([c]);
+                  toast({ title: 'Bill PDF downloaded', description: `${c.pcNo || `Bill ${i + 1}`} saved as one A4 page.` });
+                }}
+                className="h-8 w-8"
+              >
+                <FileDown className="h-3.5 w-3.5" />
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => onEdit(c)} className="h-8 w-8">
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
