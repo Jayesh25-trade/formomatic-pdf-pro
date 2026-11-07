@@ -1,36 +1,13 @@
+## Single-Bill Entry and Challan History
 
-## Delivery Challan Form Builder
+### User experience
+- Keep the home page focused on creating or editing one challan at a time; remove the saved-bill list and all-history PDF action from that page.
+- After saving a bill, offer a one-bill PDF download so it cannot accidentally export the full history.
+- Add a dedicated History page with the saved challans, review, edit, delete, and individual PDF download actions.
+- Add selection controls in History to export multiple selected challans together, one A4 page per bill; do not expose bulk history export on the home page.
+- Preserve permanent cloud storage, manual PC number editing, and the existing challan PDF design.
 
-### What We're Building
-A web app that replicates the **Parth Fuel Corporation - Delivery Challan / Freight Advice** form exactly as shown in the image. Users fill in multiple forms and export all as a multi-page A4 PDF (one form per page).
-
-### Pages & Flow
-
-**1. Form Entry Page (Home)**
-- A form with all editable fields: PC No., Date, Party Name (M/s), Truck No., Quantity (MT), Freight Rate, LR No. & Of, Purchase Order No. & Dated, Total Freight Amount, Advance, Balance to Pay
-- "Add Form" button saves current form to a list and resets for next entry
-- Shows count of filled forms with a list/preview below
-- Each saved form can be edited or deleted
-- All forms saved to localStorage for persistence
-
-**2. PDF Export**
-- "Save as PDF" button generates a PDF using jsPDF
-- Each form renders on its own A4 page, matching the exact layout, fonts, colors, and formatting from the image:
-  - "||Jai Gajanan||" in red bold, GST number in blue
-  - "PARTH FUEL CORPORATION" large red heading
-  - "INDIAN IMPORT COAL MARCHANT" subtitle
-  - Address, phone, email (blue hyperlink style), branches in italic
-  - "DELIVERY CHALLAN / FREIGHT ADVICE" underlined bold center heading
-  - All static text and field labels exactly as shown
-  - "THANKING YOU" in blue, company name and mob at bottom right
-
-### Design Details
-- Form input UI uses clean input fields with labels matching the challan
-- PDF output replicates the exact visual format from the image with proper fonts and colors
-- A4 sizing enforced in PDF output
-
-### Technical Approach
-- React components for form entry and form list management
-- localStorage for saving/loading forms
-- jsPDF for PDF generation with precise positioning to match the challan layout
-- All on the frontend, no backend needed
+### Technical approach
+- Add a `/history` route and shared app navigation; reuse the existing cloud storage hook and PDF renderer.
+- Extend the challan list with selection and per-record PDF actions; keep edit/delete connected to existing storage operations.
+- Add a focused regression test confirming one-bill downloads pass only that bill to the PDF exporter, while bulk downloads use only selected history records.
