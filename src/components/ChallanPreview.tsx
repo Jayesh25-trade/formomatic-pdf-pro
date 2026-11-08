@@ -25,7 +25,7 @@ export function ChallanPreview({ challan, index }: Props) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button variant="ghost" size="icon" title="Review bill" aria-label={`Review ${challan.pcNo || `bill ${index + 1}`}`} className="h-8 w-8">
           <Eye className="h-3.5 w-3.5" />
         </Button>
       </DialogTrigger>

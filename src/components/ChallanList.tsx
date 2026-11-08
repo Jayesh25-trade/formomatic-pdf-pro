@@ -73,7 +73,7 @@ function ShareButton({ challan, index }: { challan: ChallanForm; index: number }
   // If native share with file support is available, use it directly
   if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
     return (
-      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNativeShare}>
+      <Button variant="ghost" size="icon" title="Share bill PDF" aria-label={`Share ${challan.pcNo || `bill ${index + 1}`} PDF`} className="h-8 w-8" onClick={handleNativeShare}>
         <Share2 className="h-3.5 w-3.5" />
       </Button>
     );
@@ -82,7 +82,7 @@ function ShareButton({ challan, index }: { challan: ChallanForm; index: number }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button variant="ghost" size="icon" title="Share bill PDF" aria-label={`Share ${challan.pcNo || `bill ${index + 1}`} PDF`} className="h-8 w-8">
           <Share2 className="h-3.5 w-3.5" />
         </Button>
       </DropdownMenuTrigger>
@@ -125,7 +125,7 @@ export function ChallanList({ challans, loading, onEdit, onDelete, selectedIds, 
                 {c.partyName || 'No party'} · <span className="font-bold text-foreground">Truck: {c.truckNo || '—'}</span> · <span className="font-bold text-foreground">Qty: {c.quantity || '—'} M.T.</span>
               </div>
             </div>
-            <div className="flex gap-0.5 ml-3">
+            <div className="ml-3 flex max-w-[168px] shrink-0 flex-wrap justify-end gap-0.5">
               <Checkbox
                 aria-label={`Select ${c.pcNo || `bill ${i + 1}`} for PDF export`}
                 checked={selectedIds.includes(c.id)}
@@ -147,10 +147,10 @@ export function ChallanList({ challans, loading, onEdit, onDelete, selectedIds, 
               >
                 <FileDown className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => onEdit(c)} className="h-8 w-8">
+              <Button variant="ghost" size="icon" title="Edit bill" aria-label={`Edit ${c.pcNo || `bill ${i + 1}`}`} onClick={() => onEdit(c)} className="h-8 w-8">
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => onDelete(c.id)} className="h-8 w-8 text-destructive hover:text-destructive">
+              <Button variant="ghost" size="icon" title="Delete bill" aria-label={`Delete ${c.pcNo || `bill ${i + 1}`}`} onClick={() => onDelete(c.id)} className="h-8 w-8 text-destructive hover:text-destructive">
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>

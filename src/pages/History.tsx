@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowDownToLine, CheckSquare, FilePlus2, Search, Trash2, X } from 'lucide-react';
+import { ArrowDownToLine, Check, CheckSquare, FilePlus2, Search, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -62,9 +62,11 @@ const History = () => {
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     const id = pendingDelete.id;
-    await removeChallan(id);
-    setSelectedIds((current) => current.filter((selectedId) => selectedId !== id));
-    setPendingDelete(null);
+    const deleted = await removeChallan(id);
+    if (deleted) {
+      setSelectedIds((current) => current.filter((selectedId) => selectedId !== id));
+      setPendingDelete(null);
+    }
   };
 
   return (
@@ -95,7 +97,7 @@ const History = () => {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={toggleVisible} disabled={filteredChallans.length === 0}>
-              <Checkbox checked={allVisibleSelected} className="pointer-events-none mr-1" aria-hidden="true" />
+              {allVisibleSelected ? <CheckSquare className="h-4 w-4" /> : <Check className="h-4 w-4" />}
               {allVisibleSelected ? 'Clear visible' : 'Select visible'}
             </Button>
             {selectedIds.length > 0 && (

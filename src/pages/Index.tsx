@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ChallanFormEntry } from '@/components/ChallanFormEntry';
 import { useChallanStorage } from '@/hooks/useChallanStorage';
 import { ChallanForm } from '@/types/challan';
-import { generateChallanPdf } from '@/utils/generatePdf';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileDown } from 'lucide-react';
 import { ExpiryTimer } from '@/components/ExpiryTimer';
@@ -19,7 +18,6 @@ const Index = () => {
   const navigate = useNavigate();
   const routeState = location.state as { editingChallan?: ChallanForm; fromHistory?: boolean } | null;
   const [editing, setEditing] = useState<ChallanForm | null>(routeState?.editingChallan ?? null);
-  const [saving, setSaving] = useState(false);
   const latestChallan = getLatestChallan(challans);
 
   useEffect(() => {
@@ -44,9 +42,7 @@ const Index = () => {
   }, [challans]);
 
   const handleSubmit = async (challan: ChallanForm) => {
-    setSaving(true);
     const ok = editing ? await updateChallan(challan) : await addChallan(challan);
-    setSaving(false);
     if (!ok) return;
     if (editing) {
       setEditing(null);
@@ -82,7 +78,10 @@ const Index = () => {
               key={editing?.id || `new-${nextPcNo ?? 'x'}`}
               onSubmit={handleSubmit}
               editingChallan={editing}
-              onCancelEdit={() => setEditing(null)}
+              onCancelEdit={() => {
+                setEditing(null);
+                if (routeState?.fromHistory) navigate('/history', { replace: true });
+              }}
               defaultPcNo={defaultPcNo}
               suggestions={suggestions}
             />
@@ -113,13 +112,14 @@ const Index = () => {
         )}
 
         {editing && routeState?.fromHistory && (
-          <button
+          <Button
             type="button"
+            variant="link"
+            className="h-auto p-0"
             onClick={() => { setEditing(null); navigate('/history', { replace: true }); }}
-            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
           >
             Cancel editing and return to History
-          </button>
+          </Button>
         )}
       </main>
     </div>

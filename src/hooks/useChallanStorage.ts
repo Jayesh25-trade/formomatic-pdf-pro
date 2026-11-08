@@ -68,12 +68,14 @@ export function useChallanStorage() {
     return true;
   };
 
-  const removeChallan = async (id: string) => {
-    setChallans(prev => prev.filter(c => c.id !== id));
+  const removeChallan = async (id: string): Promise<boolean> => {
     const { error } = await supabase.from('challans').delete().eq('id', id);
     if (error) {
       toast({ title: 'Could not delete form', description: error.message, variant: 'destructive' });
+      return false;
     }
+    setChallans(prev => prev.filter(c => c.id !== id));
+    return true;
   };
 
   const clearAll = async () => {
