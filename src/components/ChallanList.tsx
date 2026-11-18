@@ -5,8 +5,7 @@ import { Pencil, Trash2, Share2, FileDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ChallanPreview } from './ChallanPreview';
 import { toast } from '@/hooks/use-toast';
-import { generateChallanBlob } from '@/utils/generatePdf';
-import { generateChallanPdf } from '@/utils/generatePdf';
+import { generateChallanBlob, generateChallanPdf } from '@/utils/generatePdf';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
@@ -39,7 +38,6 @@ function ShareButton({ challan, index }: { challan: ChallanForm; index: number }
         await navigator.share({ title: fileName, files: [file] });
       } catch { /* user cancelled */ }
     } else {
-      // fallback: download
       downloadPdf();
     }
   };
@@ -56,13 +54,11 @@ function ShareButton({ challan, index }: { challan: ChallanForm; index: number }
   };
 
   const handleWhatsApp = () => {
-    // WhatsApp Web doesn't support file sharing via URL, so download first
     downloadPdf();
     toast({ title: 'PDF downloaded — attach it in WhatsApp manually' });
   };
 
   const handleEmail = () => {
-    // Download PDF and open email compose
     downloadPdf();
     window.open(
       `mailto:?subject=${encodeURIComponent(fileName)}&body=${encodeURIComponent('Please find the attached Delivery Challan.')}`,
@@ -70,7 +66,6 @@ function ShareButton({ challan, index }: { challan: ChallanForm; index: number }
     );
   };
 
-  // If native share with file support is available, use it directly
   if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
     return (
       <Button variant="ghost" size="icon" title="Share bill PDF" aria-label={`Share ${challan.pcNo || `bill ${index + 1}`} PDF`} className="h-8 w-8" onClick={handleNativeShare}>
@@ -98,7 +93,7 @@ function ShareButton({ challan, index }: { challan: ChallanForm; index: number }
 export function ChallanList({ challans, loading, onEdit, onDelete, selectedIds, onToggleSelected }: Props) {
   if (loading) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
+      <div className="text-center py-12 text-sm text-muted-foreground">
         Loading saved bills…
       </div>
     );
@@ -106,7 +101,7 @@ export function ChallanList({ challans, loading, onEdit, onDelete, selectedIds, 
 
   if (challans.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
+      <div className="text-center py-12 text-sm text-muted-foreground">
         No bills match this search.
       </div>
     );
@@ -116,21 +111,21 @@ export function ChallanList({ challans, loading, onEdit, onDelete, selectedIds, 
     <div className="space-y-3">
       {challans.map((c, i) => (
         <Card key={c.id} className="group">
-          <CardContent className="p-4 flex items-center justify-between">
+          <CardContent className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="font-bold text-sm tracking-wide">
-                #{i + 1} — <span className="text-foreground">{c.pcNo || 'No PC No.'}</span> · {c.date ? format(new Date(c.date), 'dd/MM/yyyy') : 'No date'}
+                #{i + 1} — <span className="text-foreground">{c.pcNo || 'No Bill No.'}</span> · {c.date ? format(new Date(c.date), 'dd/MM/yyyy') : 'No date'}
               </div>
-              <div className="text-xs font-semibold text-muted-foreground truncate">
-                {c.partyName || 'No party'} · <span className="font-bold text-foreground">Truck: {c.truckNo || '—'}</span> · <span className="font-bold text-foreground">Qty: {c.quantity || '—'} M.T.</span>
+              <div className="text-xs text-muted-foreground truncate mt-0.5">
+                {c.partyName || 'No party'} · <span className="font-medium text-foreground">Truck: {c.truckNo || '—'}</span> · <span className="font-medium text-foreground">Qty: {c.quantity || '—'} M.T.</span>
               </div>
             </div>
-            <div className="ml-3 flex max-w-[168px] shrink-0 flex-wrap justify-end gap-0.5">
+            <div className="flex items-center justify-end gap-1 border-t sm:border-t-0 pt-2 sm:pt-0 shrink-0">
               <Checkbox
                 aria-label={`Select ${c.pcNo || `bill ${i + 1}`} for PDF export`}
                 checked={selectedIds.includes(c.id)}
                 onCheckedChange={() => onToggleSelected(c.id)}
-                className="mr-2 self-center"
+                className="mr-2"
               />
               <ChallanPreview challan={c} index={i} />
               <ShareButton challan={c} index={i} />

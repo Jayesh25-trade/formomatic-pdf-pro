@@ -71,9 +71,9 @@ const History = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/40 px-4 pb-10">
+    <div className="min-h-screen bg-muted/40 px-3 sm:px-4 pb-10">
       <AppNavigation />
-      <main className="mx-auto max-w-5xl space-y-6 py-8">
+      <main className="mx-auto max-w-5xl space-y-5 sm:space-y-6 py-5 sm:py-8">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase text-muted-foreground">{firm.displayName}</p>

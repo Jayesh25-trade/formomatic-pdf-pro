@@ -4,6 +4,7 @@ import { ChallanFormEntry } from '@/components/ChallanFormEntry';
 import { useChallanStorage } from '@/hooks/useChallanStorage';
 import { ChallanForm } from '@/types/challan';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { FileDown } from 'lucide-react';
 import { ExpiryTimer } from '@/components/ExpiryTimer';
 import { toast } from '@/hooks/use-toast';
@@ -57,26 +58,31 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/40 px-4 pb-10">
+    <div className="min-h-screen bg-muted/40 px-3 sm:px-4 pb-10">
       <AppNavigation />
-      <main className="max-w-2xl mx-auto space-y-6 py-8">
+      <main className="max-w-2xl mx-auto space-y-5 sm:space-y-6 py-5 sm:py-8">
         <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight" style={{ lineHeight: '1.1' }}>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ lineHeight: '1.2' }}>
             Delivery Challan Generator
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {firm.displayName} — Prepare and save one bill at a time
           </p>
         </div>
 
         <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap">
-              <span>{editing ? `Edit bill (${editing.pcNo})` : `New bill — ${firm.displayName}`}</span>
+          <CardHeader className="pb-4 px-4 sm:px-6">
+            <CardTitle className="text-sm sm:text-base flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span>{editing ? `Edit bill (${editing.pcNo})` : 'New bill'}</span>
+                <Badge variant="secondary" className="text-xs font-normal">
+                  {firm.displayName}
+                </Badge>
+              </div>
               <ExpiryTimer />
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             <ChallanFormEntry
               key={editing?.id || `new-${firm.id}-${nextBillNo}`}
               onSubmit={handleSubmit}
@@ -92,35 +98,37 @@ const Index = () => {
         </Card>
 
         {latestChallan && (
-          <section className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-sm font-semibold">Latest saved bill ({firm.shortCode})</h2>
-              <p className="text-sm text-muted-foreground">
+          <section className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-semibold">Latest saved bill ({firm.shortCode})</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
                 {latestChallan.pcNo || `No ${firm.shortCode} number`} · {latestChallan.partyName || 'No party name'}
               </p>
             </div>
             <Button
               type="button"
               variant="outline"
+              size="sm"
+              className="w-full sm:w-auto"
               onClick={() => {
                 generateChallanPdf([latestChallan]);
                 toast({ title: 'Latest bill PDF downloaded', description: 'This download contains one A4 page.' });
               }}
             >
-              <FileDown className="h-4 w-4 mr-1.5" /> Download latest PDF
+              <FileDown className="h-4 w-4 mr-1.5 shrink-0" /> Download latest PDF
             </Button>
           </section>
         )}
 
         {loading && (
-          <p className="py-4 text-center text-sm text-muted-foreground">Loading saved bills…</p>
+          <p className="py-4 text-center text-xs sm:text-sm text-muted-foreground">Loading saved bills…</p>
         )}
 
         {editing && routeState?.fromHistory && (
           <Button
             type="button"
             variant="link"
-            className="h-auto p-0"
+            className="h-auto p-0 text-xs sm:text-sm"
             onClick={() => { setEditing(null); navigate('/history', { replace: true }); }}
           >
             Cancel editing and return to History
