@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getFirmForChallan } from '@/config/firms';
 
 interface Props {
   challan: ChallanForm;
@@ -21,6 +22,7 @@ function Field({ label, value }: { label: string; value: string }) {
 
 export function ChallanPreview({ challan, index }: Props) {
   const dateStr = challan.date ? format(new Date(challan.date), 'dd/MM/yyyy') : '—';
+  const firm = getFirmForChallan(challan.pcNo);
 
   return (
     <Dialog>
@@ -31,20 +33,23 @@ export function ChallanPreview({ challan, index }: Props) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-base">Challan #{index + 1} — {challan.pcNo || 'No PC No.'}</DialogTitle>
+          <DialogTitle className="text-base">
+            {firm.displayName} — Challan #{index + 1} ({challan.pcNo || 'No Bill No.'})
+          </DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh]">
           <div className="space-y-0 px-1">
             {/* Header */}
             <div className="text-center pb-3 mb-3 border-b">
-              <p className="text-xs font-bold italic" style={{ color: 'hsl(0, 80%, 40%)' }}>||Jai Gajanan||</p>
+              <p className="text-xs font-bold italic" style={{ color: 'hsl(0, 80%, 40%)' }}>{firm.blessing}</p>
               <p className="text-lg font-bold tracking-tight" style={{ color: 'hsl(0, 80%, 35%)', lineHeight: '1.1' }}>
-                PARTH FUEL CORPORATION
+                {firm.headerTitle}
               </p>
-              <p className="text-[10px] font-semibold tracking-wider">INDIAN IMPORT COAL MARCHANT</p>
+              <p className="text-[10px] font-semibold tracking-wider text-muted-foreground">{firm.subHeader}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{firm.gstNo}</p>
             </div>
 
-            <Field label="PC No." value={challan.pcNo} />
+            <Field label={firm.shortCode + " No."} value={challan.pcNo} />
             <Field label="Date" value={dateStr} />
             <Field label="Party Name (M/s)" value={challan.partyName} />
             <Field label="Material" value={challan.materialType === 'briquettes' ? 'Briquettes' : 'India / Import Coal'} />

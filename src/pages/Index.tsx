@@ -11,9 +11,11 @@ import { generateChallanPdf } from '@/utils/generatePdf';
 import { getLatestChallan } from '@/utils/challanDownloads';
 import { AppNavigation } from '@/components/AppNavigation';
 import { Button } from '@/components/ui/button';
+import { useFirm } from '@/context/FirmContext';
 
 const Index = () => {
-  const { challans, loading, nextPcNo, addChallan, updateChallan } = useChallanStorage();
+  const { firm } = useFirm();
+  const { challans, loading, nextBillNo, defaultBillNo, addChallan, updateChallan } = useChallanStorage();
   const location = useLocation();
   const navigate = useNavigate();
   const routeState = location.state as { editingChallan?: ChallanForm; fromHistory?: boolean } | null;
@@ -24,9 +26,7 @@ const Index = () => {
     if (routeState?.editingChallan) setEditing(routeState.editingChallan);
   }, [routeState?.editingChallan]);
 
-  const defaultPcNo = nextPcNo ? `PC/${nextPcNo}` : undefined;
-
-  // Memory: suggest values the user has used on previous bills.
+  // Memory: suggest values the user has used on previous bills for this firm.
   const suggestions = useMemo(() => {
     const uniq = (vals: string[]) =>
       Array.from(new Set(vals.map(v => v.trim()).filter(Boolean))).slice(0, 100);
@@ -46,10 +46,13 @@ const Index = () => {
     if (!ok) return;
     if (editing) {
       setEditing(null);
-      toast({ title: 'Form updated' });
+      toast({ title: 'Bill updated' });
       if (routeState?.fromHistory) navigate('/history', { replace: true });
     } else {
-      toast({ title: 'Form saved', description: `Total bills: ${challans.length + 1}` });
+      toast({
+        title: 'Bill saved',
+        description: `${firm.displayName} total bills: ${challans.length + 1}`,
+      });
     }
   };
 
@@ -62,27 +65,27 @@ const Index = () => {
             Delivery Challan Generator
           </h1>
           <p className="text-sm text-muted-foreground">
-            Parth Fuel Corporation — Prepare and save one bill at a time
+            {firm.displayName} — Prepare and save one bill at a time
           </p>
         </div>
 
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap">
-               <span>{editing ? 'Edit bill' : 'New bill'}</span>
+              <span>{editing ? `Edit bill (${editing.pcNo})` : `New bill — ${firm.displayName}`}</span>
               <ExpiryTimer />
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ChallanFormEntry
-              key={editing?.id || `new-${nextPcNo ?? 'x'}`}
+              key={editing?.id || `new-${firm.id}-${nextBillNo}`}
               onSubmit={handleSubmit}
               editingChallan={editing}
               onCancelEdit={() => {
                 setEditing(null);
                 if (routeState?.fromHistory) navigate('/history', { replace: true });
               }}
-              defaultPcNo={defaultPcNo}
+              defaultPcNo={defaultBillNo}
               suggestions={suggestions}
             />
           </CardContent>
@@ -91,8 +94,10 @@ const Index = () => {
         {latestChallan && (
           <section className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-sm font-semibold">Latest saved bill</h2>
-              <p className="text-sm text-muted-foreground">{latestChallan.pcNo || 'No PC number'} · {latestChallan.partyName || 'No party name'}</p>
+              <h2 className="text-sm font-semibold">Latest saved bill ({firm.shortCode})</h2>
+              <p className="text-sm text-muted-foreground">
+                {latestChallan.pcNo || `No ${firm.shortCode} number`} · {latestChallan.partyName || 'No party name'}
+              </p>
             </div>
             <Button
               type="button"
@@ -102,7 +107,7 @@ const Index = () => {
                 toast({ title: 'Latest bill PDF downloaded', description: 'This download contains one A4 page.' });
               }}
             >
-              <FileDown className="h-4 w-4" /> Download latest PDF
+              <FileDown className="h-4 w-4 mr-1.5" /> Download latest PDF
             </Button>
           </section>
         )}

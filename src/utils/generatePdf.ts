@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import { ChallanForm } from '@/types/challan';
 import { format } from 'date-fns';
+import { getFirmForChallan, FirmConfig } from '@/config/firms';
 
 export function generateChallanPdf(challans: ChallanForm[]) {
   const doc = buildChallanDoc(challans);
@@ -27,62 +28,74 @@ function buildChallanDoc(challans: ChallanForm[]): jsPDF {
 function renderChallanPage(doc: jsPDF, c: ChallanForm, pageW: number) {
   const margin = 20;
   let y = 18;
+  const firm: FirmConfig = getFirmForChallan(c.pcNo);
 
-  // ||Jai Gajanan|| - red bold italic
+  // Blessing - red bold italic
   doc.setFont('times', 'bolditalic');
   doc.setFontSize(11);
   doc.setTextColor(200, 0, 0);
-  doc.text('||Jai Gajanan||', pageW / 2 - 20, y);
+  doc.text(firm.blessing, pageW / 2 - 20, y);
 
   // GST No - blue
   doc.setFont('times', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 180);
-  doc.text('GST No. 27AREPM6726C1ZV', pageW / 2 + 15, y);
+  doc.text(firm.gstNo, pageW / 2 + 15, y);
 
   y += 10;
 
-  // PARTH FUEL CORPORATION - large red bold
+  // FIRM NAME - large red bold
   doc.setFont('times', 'bold');
   doc.setFontSize(22);
   doc.setTextColor(180, 0, 0);
-  doc.text('PARTH FUEL CORPORATION', pageW / 2, y, { align: 'center' });
+  doc.text(firm.headerTitle, pageW / 2, y, { align: 'center' });
 
   y += 8;
 
-  // INDIAN IMPORT COAL MARCHANT
+  // Subheader / Category
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  doc.text('INDIAN  IMPORT  COAL  MARCHANT', pageW / 2, y, { align: 'center' });
+  doc.text(firm.subHeader, pageW / 2, y, { align: 'center' });
 
   y += 6;
 
   // Address line
   doc.setFont('times', 'normal');
   doc.setFontSize(9);
-  doc.text('Matkarri galli , Plot No.7, Near Bustand, Shegaon \u2013 444203 Dist. Buldhana', pageW / 2, y, { align: 'center' });
+  doc.text(firm.address, pageW / 2, y, { align: 'center' });
 
   y += 5;
 
   // Phone & email
-  doc.text('M : 9881125511 / 7020709696 , Email : ', pageW / 2 - 25, y);
-  doc.setTextColor(0, 0, 180);
-  doc.text('parthfuelcorporation23@gmail.com', pageW / 2 + 27, y);
+  if (firm.emailText) {
+    doc.text(`${firm.phoneText} , Email : `, pageW / 2 - 25, y);
+    doc.setTextColor(0, 0, 180);
+    doc.text(firm.emailText, pageW / 2 + 27, y);
+  } else {
+    doc.text(firm.phoneText, pageW / 2, y, { align: 'center' });
+  }
 
   y += 5;
 
-  // Branches
+  // Branches / State
   doc.setTextColor(0, 0, 0);
   doc.setFont('times', 'normal');
-  doc.text('Branches:', pageW / 2 - 22, y);
-  doc.setFont('times', 'italic');
-  doc.setTextColor(200, 0, 0);
-  doc.text('Gujrat And Maharashtra', pageW / 2 - 5, y);
+  if (firm.id === 'parth') {
+    doc.text('Branches:', pageW / 2 - 22, y);
+    doc.setFont('times', 'italic');
+    doc.setTextColor(200, 0, 0);
+    doc.text(firm.branchText || 'Gujrat And Maharashtra', pageW / 2 - 5, y);
+  } else {
+    doc.text('State:', pageW / 2 - 25, y);
+    doc.setFont('times', 'italic');
+    doc.setTextColor(200, 0, 0);
+    doc.text(firm.branchText || 'Maharashtra (State Code: 27)', pageW / 2 - 12, y);
+  }
 
   y += 8;
 
-  // PC No and Date - right aligned
+  // Bill / PC No and Date - right aligned
   doc.setFont('times', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(200, 0, 0);
@@ -99,101 +112,128 @@ function renderChallanPage(doc: jsPDF, c: ChallanForm, pageW: number) {
   doc.setLineWidth(0.5);
   doc.line(margin, y, pageW - margin, y);
 
-  y += 7;
+  y += 8;
 
-  // DELIVERY CHALLAN / FREIGHT ADVICE - centered bold underlined
-  doc.setFont('times', 'bolditalic');
-  doc.setFontSize(13);
+  // DELIVERY CHALLAN title
+  doc.setFont('times', 'bold');
+  doc.setFontSize(14);
   doc.setTextColor(0, 0, 0);
-  const titleText = 'DELIVERY CHALLAN / FREIGHT ADVICE';
-  const titleWidth = doc.getTextWidth(titleText);
-  const titleX = (pageW - titleWidth) / 2;
-  doc.text(titleText, pageW / 2, y, { align: 'center' });
-  doc.setLineWidth(0.4);
-  doc.line(titleX, y + 1, titleX + titleWidth, y + 1);
-
-  y += 5;
-
-  // Another line
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, pageW - margin, y);
+  doc.text('DELIVERY CHALLAN', pageW / 2, y, { align: 'center' });
 
   y += 8;
 
-  // Body text
+  // M/s Party Name
   doc.setFont('times', 'normal');
   doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-
-  // To,
-  doc.text('To,', margin, y);
-  y += 6;
-  doc.text('The Store Department', margin, y);
-  y += 7;
-
-  // M/s line
-  doc.text('M / s.', margin, y);
+  doc.text('M/s.', margin, y);
   doc.setFont('times', 'bold');
-  doc.text(c.partyName || '________________________________', margin + 14, y);
-  doc.setLineWidth(0.2);
-  doc.line(margin + 14, y + 1, pageW - margin, y + 1);
-
-  y += 10;
-
-  doc.setFont('times', 'normal');
-  doc.text('Dear sir,', margin, y);
-
-  y += 7;
-
-  // Truck line
-  doc.text('We are Despatching Truck No.', margin, y);
-  doc.setFont('times', 'bold');
-  doc.text(c.truckNo || '________________', margin + 56, y);
-  doc.setFont('times', 'normal');
-  doc.setLineWidth(0.2);
-  doc.line(margin + 56, y + 1, pageW - margin, y + 1);
-
-  y += 7;
-
-  // Coal line
-  const materialLabel = c.materialType === 'briquettes'
-    ? 'OF BRIQUETTES with Qty.'
-    : 'OF INDIA COAL / IMPORT COAL with Qty.';
-  doc.text(materialLabel, margin, y);
-  const qtyX = margin + doc.getTextWidth(materialLabel) + 4;
-  doc.setFont('times', 'bold');
-  doc.setFontSize(13);
-  doc.text(c.quantity || '________', qtyX, y);
+  doc.setFontSize(11);
+  doc.text(c.partyName || '', margin + 12, y);
   doc.setFont('times', 'normal');
   doc.setFontSize(10);
-  doc.text('M.T.', pageW - margin - 8, y);
-  doc.setLineWidth(0.2);
-  doc.line(qtyX, y + 1, pageW - margin - 10, y + 1);
+  doc.line(margin + 10, y + 1, pageW - margin, y + 1);
 
   y += 7;
 
-  // Freight Rate
-  doc.text('@Freight Rate', margin, y);
-  doc.text(c.freightRate || '', margin + 30, y);
-  doc.line(margin + 28, y + 1, pageW - margin, y + 1);
+  // Second party line
+  doc.line(margin, y + 1, pageW - margin, y + 1);
 
   y += 7;
 
-  // LR No
-  doc.text('Under L.R. No.', margin, y);
-  doc.text(c.lrNo || '', margin + 30, y);
-  doc.line(margin + 28, y + 1, margin + 65, y + 1);
-  doc.text('Of', margin + 68, y);
-  doc.text(c.lrOf || '', margin + 76, y);
-  doc.line(margin + 74, y + 1, pageW - margin, y + 1);
+  // Please receive the following material...
+  doc.text('Please receive the following material in good condition as per details given below:', margin, y);
 
+  y += 8;
+
+  // TABLE
+  const tableX = margin;
+  const tableW = pageW - 2 * margin;
+  const col1W = 120; // Material col
+  const col2W = tableW - col1W; // Weight col
+
+  // Header row
+  doc.rect(tableX, y, tableW, 8);
+  doc.line(tableX + col1W, y, tableX + col1W, y + 8);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(10);
+  doc.text('PARTICULARS', tableX + col1W / 2, y + 5.5, { align: 'center' });
+  doc.text('WEIGHT (M.T.)', tableX + col1W + col2W / 2, y + 5.5, { align: 'center' });
+
+  y += 8;
+
+  // Row 1: India / Import Coal (or briquettes)
+  const rowH = 7;
+  const materialLabel = c.materialType === 'briquettes' ? 'Briquettes' : 'India / Import Coal';
+
+  doc.rect(tableX, y, tableW, rowH);
+  doc.line(tableX + col1W, y, tableX + col1W, y + rowH);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(10);
+  doc.text(materialLabel, tableX + 4, y + 5);
+
+  y += rowH;
+
+  // Row 2: Truck No & Qty
+  doc.rect(tableX, y, tableW, rowH);
+  doc.line(tableX + col1W, y, tableX + col1W, y + rowH);
+  doc.setFont('times', 'normal');
+  doc.text('Truck No.', tableX + 4, y + 5);
+  doc.setFont('times', 'bold');
+  doc.text(c.truckNo || '', tableX + 26, y + 5);
+
+  // Quantity in weight col
+  if (c.quantity) {
+    doc.text(c.quantity, tableX + col1W + col2W / 2, y + 5, { align: 'center' });
+  }
+
+  y += rowH;
+
+  // Row 3: Freight Rate
+  doc.rect(tableX, y, tableW, rowH);
+  doc.line(tableX + col1W, y, tableX + col1W, y + rowH);
+  doc.setFont('times', 'normal');
+  doc.text('Freight Rate', tableX + 4, y + 5);
+  doc.text(c.freightRate || '', tableX + 30, y + 5);
+
+  y += rowH;
+
+  // Row 4: L.R. No & Of
+  doc.rect(tableX, y, tableW, rowH);
+  doc.line(tableX + col1W, y, tableX + col1W, y + rowH);
+  doc.text('L.R. No.', tableX + 4, y + 5);
+  doc.text(c.lrNo || '', tableX + 22, y + 5);
+  doc.text('Of', tableX + 55, y + 5);
+  doc.text(c.lrOf || '', tableX + 63, y + 5);
+
+  y += rowH;
+
+  // Total row
+  doc.rect(tableX, y, tableW, rowH);
+  doc.line(tableX + col1W, y, tableX + col1W, y + rowH);
+  doc.setFont('times', 'bold');
+  doc.text('TOTAL', tableX + 4, y + 5);
+  if (c.quantity) {
+    doc.text(c.quantity, tableX + col1W + col2W / 2, y + 5, { align: 'center' });
+  }
+
+  y += rowH;
+
+  // Empty row
+  doc.rect(tableX, y, tableW, rowH);
+  doc.line(tableX + col1W, y, tableX + col1W, y + rowH);
+
+  y += rowH;
+
+  // Table bottom space
   y += 8;
 
   // IN account of M/s
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
   doc.text('IN account of M/s.', margin, y);
   doc.setFont('times', 'bold');
   doc.setFontSize(12);
-  doc.text('PARTH FUEL CORPORATION', margin + 38, y);
+  doc.text(firm.inAccountOf, margin + 38, y);
   doc.setFont('times', 'normal');
   doc.setFontSize(10);
   doc.line(margin + 36, y + 1, pageW - margin, y + 1);
@@ -253,8 +293,8 @@ function renderChallanPage(doc: jsPDF, c: ChallanForm, pageW: number) {
   doc.setTextColor(0, 0, 0);
   doc.setFont('times', 'bold');
   doc.setFontSize(11);
-  doc.text('PARTH FUEL CORPORATION', pageW - margin, y, { align: 'right' });
+  doc.text(firm.signatoryTitle, pageW - margin, y, { align: 'right' });
   y += 5;
   doc.setFontSize(10);
-  doc.text('Mob : 9881125511', pageW - margin, y, { align: 'right' });
+  doc.text(firm.signatoryPhone, pageW - margin, y, { align: 'right' });
 }

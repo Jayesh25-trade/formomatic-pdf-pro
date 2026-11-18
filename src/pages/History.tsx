@@ -4,7 +4,6 @@ import { ArrowDownToLine, Check, CheckSquare, FilePlus2, Search, Trash2, X } fro
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,8 +21,10 @@ import { ChallanForm } from '@/types/challan';
 import { generateChallanPdf } from '@/utils/generatePdf';
 import { getSelectedChallans } from '@/utils/challanDownloads';
 import { toast } from '@/hooks/use-toast';
+import { useFirm } from '@/context/FirmContext';
 
 const History = () => {
+  const { firm } = useFirm();
   const { challans, loading, removeChallan } = useChallanStorage();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -75,9 +76,11 @@ const History = () => {
       <main className="mx-auto max-w-5xl space-y-6 py-8">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Parth Fuel Corporation</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">{firm.displayName}</p>
             <h1 className="text-2xl font-bold">Bill history</h1>
-            <p className="text-sm text-muted-foreground">{loading ? 'Loading saved bills…' : `${challans.length} saved bill${challans.length === 1 ? '' : 's'}`}</p>
+            <p className="text-sm text-muted-foreground">
+              {loading ? 'Loading saved bills…' : `${challans.length} saved bill${challans.length === 1 ? '' : 's'}`}
+            </p>
           </div>
           <Button onClick={() => navigate('/')} className="gap-2">
             <FilePlus2 className="h-4 w-4" /> Create new bill
@@ -89,7 +92,7 @@ const History = () => {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               aria-label="Search bill history"
-              placeholder="Search PC number, party or truck"
+              placeholder={`Search ${firm.shortCode} number, party or truck`}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="pl-9"
@@ -98,60 +101,74 @@ const History = () => {
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={toggleVisible} disabled={filteredChallans.length === 0}>
               {allVisibleSelected ? <CheckSquare className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-              {allVisibleSelected ? 'Clear visible' : 'Select visible'}
+              <span className="ml-1.5 hidden sm:inline">{allVisibleSelected ? 'Deselect visible' : 'Select all visible'}</span>
             </Button>
             {selectedIds.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
-                <X className="h-4 w-4" /> Clear selection
-              </Button>
+              <>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])} className="text-muted-foreground">
+                  <X className="h-4 w-4" /> Clear ({selectedIds.length})
+                </Button>
+                <Button size="sm" onClick={handleBulkDownload} className="gap-1.5">
+                  <ArrowDownToLine className="h-4 w-4" />
+                  Download selected ({selectedIds.length})
+                </Button>
+              </>
             )}
-            <Button onClick={handleBulkDownload} disabled={selectedChallans.length === 0} size="sm" className="gap-2">
-              <ArrowDownToLine className="h-4 w-4" /> Download selected ({selectedChallans.length})
-            </Button>
           </div>
         </div>
 
-        {filteredChallans.length === 0 && !loading ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-              <div className="rounded-full bg-muted p-3 text-muted-foreground"><CheckSquare className="h-5 w-5" /></div>
-              <div>
-                <h2 className="font-semibold">{challans.length === 0 ? 'No saved bills yet' : 'No matching bills'}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {challans.length === 0 ? 'Your saved bills will appear here.' : 'Try another PC number, party name or truck number.'}
-                </p>
-              </div>
-              {challans.length === 0 && <Button variant="outline" onClick={() => navigate('/')}>Create your first bill</Button>}
+        {selectedIds.length > 0 && (
+          <div className="flex items-center justify-between rounded-md border border-primary/20 bg-primary/5 px-4 py-2 text-sm text-primary">
+            <span>{selectedIds.length} bill(s) selected for combined download</span>
+            <Button variant="link" size="sm" className="h-auto p-0 text-primary underline" onClick={() => setSelectedIds([])}>
+              Clear selection
+            </Button>
+          </div>
+        )}
+
+        <ChallanList
+          challans={filteredChallans}
+          loading={loading}
+          selectedIds={selectedIds}
+          onToggleSelected={toggleSelected}
+          onEdit={(challan) => navigate('/', { state: { editingChallan: challan, fromHistory: true } })}
+          onDelete={(id) => {
+            const found = challans.find((b) => b.id === id);
+            if (found) setPendingDelete(found);
+          }}
+        />
+
+        {!loading && filteredChallans.length === 0 && (
+          <Card className="text-center">
+            <CardContent className="py-12 space-y-3">
+              <p className="text-base font-semibold">No bills found for {firm.displayName}</p>
+              <p className="text-sm text-muted-foreground">
+                {search ? 'Try clearing your search query.' : `No bills have been saved under ${firm.displayName} yet.`}
+              </p>
+              <Button onClick={() => navigate('/')} variant="outline" className="gap-2">
+                <FilePlus2 className="h-4 w-4" /> Create first {firm.shortCode} bill
+              </Button>
             </CardContent>
           </Card>
-        ) : (
-          <ChallanList
-            challans={filteredChallans}
-            loading={loading}
-            onEdit={(challan) => navigate('/', { state: { editingChallan: challan, fromHistory: true } })}
-            onDelete={(id) => setPendingDelete(challans.find((challan) => challan.id === id) ?? null)}
-            selectedIds={selectedIds}
-            onToggleSelected={toggleSelected}
-          />
         )}
-      </main>
 
-      <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this saved bill?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingDelete?.pcNo || 'This bill'} will be permanently removed. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep bill</AlertDialogCancel>
-            <AlertDialogAction onClick={(event) => { event.preventDefault(); void confirmDelete(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              <Trash2 className="h-4 w-4" /> Delete bill
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <AlertDialog open={Boolean(pendingDelete)} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this saved bill?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete bill <strong>{pendingDelete?.pcNo || 'Untitled'}</strong> ({pendingDelete?.partyName || 'No party name'}) from {firm.displayName}. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                <Trash2 className="h-4 w-4 mr-1.5" /> Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </main>
     </div>
   );
 };

@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
-import { getDraftAgeMs } from '@/components/ExpiryTimer';
+import { useFirm } from '@/context/FirmContext';
 
 interface Props {
   onSubmit: (challan: ChallanForm) => void;
@@ -19,17 +19,16 @@ interface Props {
   suggestions?: Partial<Record<keyof ChallanForm, string[]>>;
 }
 
-const DRAFT_KEY = 'challan-draft';
 const DRAFT_MAX_AGE_MS = 15 * 60 * 1000;
 
-function loadDraft(): ChallanForm | null {
+function loadDraft(key: string): ChallanForm | null {
   try {
-    const raw = localStorage.getItem(DRAFT_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed?.form || !parsed?.ts) return null;
     if (Date.now() - Number(parsed.ts) > DRAFT_MAX_AGE_MS) {
-      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(key);
       return null;
     }
     return parsed.form as ChallanForm;
@@ -39,20 +38,29 @@ function loadDraft(): ChallanForm | null {
 }
 
 export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit, defaultPcNo, suggestions }: Props) {
+  const { firm } = useFirm();
+  const draftKey = `challan-draft-${firm.id}`;
+
   const [form, setForm] = useState<ChallanForm>(() => {
     if (editingChallan) return editingChallan;
-    const draft = loadDraft();
+    const draft = loadDraft(draftKey);
     if (draft) return { ...draft, pcNo: draft.pcNo || defaultPcNo || '' };
     return { ...emptyChallan(), pcNo: defaultPcNo ?? '' };
   });
   const [dateOpen, setDateOpen] = useState(false);
 
-  // Persist the in-progress (unsaved) form; it auto-clears after 15 minutes
-  // of inactivity. Saved bills are stored permanently in the cloud database.
+  // Update default number if empty or editing switched
+  useEffect(() => {
+    if (!editingChallan && defaultPcNo && (!form.pcNo || form.pcNo.trim() === '')) {
+      setForm(prev => ({ ...prev, pcNo: defaultPcNo }));
+    }
+  }, [defaultPcNo, editingChallan, form.pcNo]);
+
+  // Persist the in-progress (unsaved) form per firm; auto-clears after 15 minutes of inactivity.
   useEffect(() => {
     if (editingChallan) return;
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, ts: Date.now() }));
-  }, [form, editingChallan]);
+    localStorage.setItem(draftKey, JSON.stringify({ form, ts: Date.now() }));
+  }, [form, editingChallan, draftKey]);
 
   const handleChange = (field: keyof ChallanForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value } as ChallanForm));
@@ -62,7 +70,7 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit, defau
     e.preventDefault();
     onSubmit(form);
     setForm({ ...emptyChallan(), pcNo: defaultPcNo ?? '' });
-    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(draftKey);
   };
 
   const selectedDate = form.date ? new Date(form.date) : undefined;
@@ -89,8 +97,14 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit, defau
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="pcNo">PC No.</Label>
-          <Input id="pcNo" value={form.pcNo} onChange={e => handleChange('pcNo', e.target.value)} placeholder="PC/211" {...listProps('pcNo')} />
+          <Label htmlFor="pcNo">{firm.shortCode} No.</Label>
+          <Input
+            id="pcNo"
+            value={form.pcNo}
+            onChange={e => handleChange('pcNo', e.target.value)}
+            placeholder={`${firm.invoicePrefix}1`}
+            {...listProps('pcNo')}
+          />
         </div>
         <div className="space-y-1.5">
           <Label>Date</Label>
@@ -116,7 +130,7 @@ export function ChallanFormEntry({ onSubmit, editingChallan, onCancelEdit, defau
 
       <div className="space-y-1.5">
         <Label htmlFor="partyName">Party Name (M/s)</Label>
-        <Input id="partyName" value={form.partyName} onChange={e => handleChange('partyName', e.target.value)} placeholder="Kairav Chemofarabe Industries ltd" {...listProps('partyName')} />
+        <Input id="partyName" value={form.partyName} onChange={e => handleChange('partyName', e.target.value)} placeholder="Enter party name" {...listProps('partyName')} />
       </div>
 
       <div className="space-y-2">
